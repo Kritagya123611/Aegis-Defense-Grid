@@ -1,35 +1,25 @@
 package main
 
-import(
-	"bufio"
+import (
 	"fmt"
-	"os"
-	"regexp"
-	"strings"
+	"net/http"
 )
 
-//target to do is judging the user input with regex patterns and tell wether 
-//they are a part of sql injection attack or not
+func sqlinjection(w http.ResponseWriter, r *http.Request) {
 
-func main(){
-	//defining regex patterns
-	sqlinjectionregex:=regexp.MustCompile(`(?i)(union\s+select|' OR '1'='1|--;)`)
-	//reading input from user
-	read1:=bufio.NewReader(os.Stdin)
-	fmt.Print("Enter your input: ")
-	userinput,err:=read1.ReadString('\n')
-	if(err!=nil){
-		fmt.Println("error reading user input")
-	}else{
-		userinput=strings.TrimSpace(userinput)
-		//checking for sql injection patterns now
-		if(sqlinjectionregex.MatchString(userinput)){
-			fmt.Println("RESULT: DANGEROUS INPUT DETECTED!")
-			fmt.Println("Type: Potential SQL Injection")
-			fmt.Println("Action: [Would redirect to Shadow Container]")
-		}else{
-			fmt.Println("RESULT: SAFE")
-			fmt.Println("Action: [Would forward to Live App]")
-		}
+	payload := r.URL.RawQuery
+
+	if AnalyzeTraffic(payload) {
+		fmt.Fprintln(w, "RESULT: DANGEROUS INPUT DETECTED")
+		fmt.Fprintln(w, "Action: Redirect to Shadow Container")
+	} else {
+		fmt.Fprintln(w, "RESULT: SAFE")
+		fmt.Fprintln(w, "Action: Forward to Live App")
 	}
+}
+
+func main() {
+	http.HandleFunc("/shreya", sqlinjection)
+	fmt.Println("Server is running on port 8080")
+	http.ListenAndServe(":8080", nil)
 }
