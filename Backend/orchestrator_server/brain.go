@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"github.com/joho/godotenv"
 )
 
-const COHERE_API_KEY = "PaYWOrQMhtRKXsjnkeSDpriqQTyEK6zb7gOI32zF"
+var COHERE_API_KEY string 
 const COHERE_URL = "https://api.cohere.ai/v1/chat"
 
 type AlertPayload struct {
@@ -98,6 +101,17 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: .env file not found. Assuming env vars are set manually.")
+	}
+
+	//setting the key from env variable
+	COHERE_API_KEY = os.Getenv("COHERE_API_KEY")
+	if COHERE_API_KEY == "" {
+		log.Fatal("FATAL: COHERE_API_KEY is missing in .env file!")
+	}
+
 	http.HandleFunc("/webhook/alerts", alertHandler)
 	port := ":3000"
 	fmt.Println("Aegis Orchestrator (Powered by Cohere) running on port", port)
