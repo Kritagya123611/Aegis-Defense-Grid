@@ -3,27 +3,19 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"net/url" // <--- NEW IMPORT: Needed for decoding
+	"net/url" 
 )
 
 func sqlinjection(w http.ResponseWriter, r *http.Request) {
-	// 1. Get the raw payload (e.g., "q=admin%27OR%271%27=%271")
 	rawPayload := r.URL.RawQuery
-
-	// 2. DECODE IT (Convert "%27" back to "'")
-	// This makes "admin%27" become "admin'" so the Regex can see it.
 	decodedPayload, err := url.QueryUnescape(rawPayload)
 	if err != nil {
 		fmt.Println("Error decoding URL:", err)
-		decodedPayload = rawPayload // Fallback to raw if decoding fails
+		decodedPayload = rawPayload 
 	}
-
-	// 3. Check Logic using the DECODED payload
 	if AnalyzeTraffic(decodedPayload) {
 		fmt.Println("[DANGER] Input detected:", decodedPayload)
 		fmt.Println("Action: Redirecting to Shadow Container on 8082")
-		
-		// Send the ORIGINAL raw payload to the trap (so the link still works)
 		trapURL := "http://localhost:8082/?" + rawPayload
 		http.Redirect(w, r, trapURL, http.StatusTemporaryRedirect)
 

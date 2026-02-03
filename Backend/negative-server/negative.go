@@ -8,16 +8,13 @@ import (
 	"strings"
 )
 
-// 1. Define the Data Structure (Must match brain.go)
 type AlertPayload struct {
 	AttackType string `json:"attackType"`
 	Payload    string `json:"payload"`
 	OriginIP   string `json:"originIP"`
 }
 
-// 2. The "Snitch" Function
 func sendAlertToBrain(payload string) {
-	// Prepare the JSON data
 	data := AlertPayload{
 		AttackType: "SQL Injection",
 		Payload:    payload,
@@ -25,7 +22,6 @@ func sendAlertToBrain(payload string) {
 	}
 	jsonData, _ := json.Marshal(data)
 
-	// Send POST request to the Brain
 	brainURL := "http://localhost:3000/webhook/alerts" 
 	
 	resp, err := http.Post(brainURL, "application/json", bytes.NewBuffer(jsonData))
@@ -52,7 +48,6 @@ func negative(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, " 1 | admin    | flag{nice_try_hacker}") 
 		fmt.Fprintln(w, "</pre>")
 	} else {
-		// Normal Page (if they visit without a hack)
 		fmt.Fprintln(w, "<h1>Access Denied</h1>")
 		fmt.Fprintln(w, "<p>You are in the <b>NEGATIVE (Shadow)</b> Environment.</p>")
 	}
