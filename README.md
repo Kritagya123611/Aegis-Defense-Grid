@@ -1,113 +1,186 @@
-# AEGIS: The Self-Healing Polymorphic Defense Grid
+<div align="center">
+  <h1> AEGIS DEFENSE GRID</h1>
+  
+  <p style="font-size: 1.5rem; font-style: italic; margin-top: 0;">
+    "Static Defense is Death. Adapt or Expire."
+  </p>
+  
+  <p>
+    <strong>A Self-Healing, Distributed Cybersecurity Architecture empowered by Generative AI.</strong>
+  </p>
 
-## Overview
+  <p>
+    <a href="https://go.dev/">
+      <img src="https://img.shields.io/badge/Language-Golang-00ADD8?style=for-the-badge&logo=go&logoColor=white" />
+    </a>
+    <a href="https://cohere.com/">
+      <img src="https://img.shields.io/badge/AI_Core-Cohere_Command-purple?style=for-the-badge" />
+    </a>
+    <a href="#">
+      <img src="https://img.shields.io/badge/Architecture-Microservices-orange?style=for-the-badge" />
+    </a>
+    <a href="#">
+      <img src="https://img.shields.io/badge/Status-Active_Defense-success?style=for-the-badge" />
+    </a>
+    <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
+  </p>
+</div>
 
-AEGIS is an innovative cybersecurity platform designed as a self-healing polymorphic defense grid. Unlike traditional firewalls that merely block known threats, AEGIS functions as a digital immune system, dynamically adapting to unknown attacks in real-time. It detects anomalies, isolates threats in a controlled environment, analyzes vulnerabilities using AI, generates code patches, and deploys fixes without human intervention. This project was developed for Hackathon Track: Theme 6 - AI + Cybersecurity & Privacy.
+---
 
-**Tagline:** Most security tools block attacks. Aegis consumes them.
+##  Transmission 001: The Concept
 
-AEGIS addresses the challenges of AI-accelerated cyber threats, where zero-day exploits can compromise systems before patches are available. By integrating high-performance networking, container orchestration, and advanced AI, AEGIS provides proactive, explainable security for enterprise infrastructure.
+> "In modern cyber-warfare, firewalls are just speed bumps. The AEGIS Protocol does not just block attacks—it consumes them, analyzes them, and evolves instantly."
 
-## Problem Statement
+**AEGIS** creates a new category of infrastructure: *The Self-Healing Network*.
 
-In the era of AI-driven cyberattacks, traditional security measures are insufficient. Hackers exploit zero-day vulnerabilities faster than human teams can respond, often compromising systems in minutes while remediation takes days or weeks. Conventional firewalls and intrusion detection systems are reactive and "dumb," relying on predefined rules to block known threats, leaving organizations exposed to novel attack vectors.
+Traditional WAFs (Web Application Firewalls) are binary: Block or Allow. Aegis is dynamic. It functions as a **Distributed Trap**. When an attacker strikes, we don't just reject the packet. We silently reroute them to a **Shadow Realm** (Honeypot), extract their payload, feed it to a Neural Engine (Cohere AI), and autonomously write a patch to fix the vulnerability in real-time.
 
-## Solution
+---
 
-AEGIS transforms cybersecurity by creating a self-healing infrastructure. It intercepts suspicious traffic, routes it to an isolated shadow environment, observes the attack's impact, uses AI to identify and patch the underlying vulnerability in the source code, and hot-swaps the secured version into production. This process ensures zero downtime and automatic evolution against threats, making the system stronger with each attempted breach.
+##  Core Architecture & Innovations
 
-Key benefits include:
-- **Real-Time Adaptation:** Automatically patches code vulnerabilities without manual intervention.
-- **Threat Intelligence Gathering:** Uses honeypots to study attacks in a safe environment.
-- **Explainable Security:** Provides detailed logs and dashboards for auditing and compliance.
-- **Scalability:** Built on microservices and containerization for enterprise deployment.
+### 1. The Gatekeeper (Reverse Proxy)
+The entry point of the grid running on **Port 8080**.
+* **Traffic Analysis:** Uses regex heuristics to inspect every byte of incoming traffic.
+* **Dynamic Routing:** Legitimate users are routed to the **Live App**. Malicious actors are silently diverted to the **Shadow Trap**.
+* **Active Defense:** Capable of receiving "Ban Orders" from the Orchestrator to blacklist IPs instantly.
 
-## Features
+### 2. The Shadow Trap (Honeypot)
+A high-fidelity replica of the production server running on **Port 8082**.
+* **Deception:** It looks, feels, and acts like the real server.
+* **Data Leak Simulation:** When attacked (e.g., SQL Injection), it simulates a successful breach, rendering fake data to keep the attacker engaged.
+* **The Snitch:** While the hacker celebrates, the Shadow Server executes a silent `POST` callback to the Brain, transmitting the attack vector.
 
-- **Anomaly Detection and Routing:** High-concurrency reverse proxy analyzes and diverts suspicious requests.
-- **Isolated Shadow Environments:** Ephemeral containers simulate production to capture attack behaviors.
-- **AI-Driven Analysis and Patching:** Leverages large language models to generate secure code fixes.
-- **Automated Deployment:** Hot-swaps patched containers after verification.
-- **Operations Dashboard:** Real-time monitoring of system status, logs, and remediation processes.
+### 3. The Neural Orchestrator (The Brain)
+The central intelligence running on **Port 3000**.
+* **AI Forensics:** Connects to **Cohere AI (Command R+)** to analyze the raw attack payload.
+* **Generative Patching:** The AI writes a new, secure Go server file (`secure.go`) that fixes the specific vulnerability used by the attacker.
+* **Hot Deployment:** The Brain spins up the new server on a fresh port (**8083**) and commands the Proxy to hot-swap traffic.
 
-## Architecture
+---
 
-AEGIS employs a microservices-based architecture to ensure reliability, scalability, and maintainability.
+##  The Self-Healing Loop: The Flow
 
-- **Gatekeeper (Go):** A high-performance reverse proxy handling traffic interception and routing. Chosen for its speed and low-latency packet processing.
-- **Nervous System (Node.js/Express with TypeScript):** Central orchestrator managing container lifecycles and integrating with AI components.
-- **Brain (Gemini 1.5 Pro / GPT-4o):** AI layer for vulnerability analysis and code generation.
-- **Body (Docker + DevOps Tools):** Containerized application environments for live, shadow, and test instances.
+1.  **Infiltration:** Attacker sends a malicious payload (e.g., `admin'OR'1'='1`).
+2.  **Detection:** Proxy recognizes the pattern but allows the request to pass to the Trap.
+3.  **Extraction:** The Shadow Server captures the payload and alerts the Brain.
+4.  **Analysis:** Cohere AI breaks down the SQL Injection and generates a sanitized Go handler.
+5.  **Remediation:**
+    * Brain writes `patched_server/secure.go`.
+    * Brain starts the new server.
+    * Brain tells Proxy: *"Switch traffic to Port 8083."*
+6.  **Immunity:** The attacker tries the same exploit again. It fails. The system has evolved.
 
-This stack combines low-level networking efficiency with high-level orchestration and intelligence, enabling seamless operation in distributed systems.
+---
 
-## Workflow
+##  System Topology
 
-The lifecycle of an attack in AEGIS follows these phases:
+We engineered a pure-Golang distributed system to minimize latency and dependency overhead.
 
-1. **Interception:** The Gatekeeper analyzes incoming requests. Normal traffic is routed to the live container; suspicious traffic is diverted to a shadow container without alerting the attacker.
-2. **Trap Activation:** In the shadow environment, the attack is allowed to execute, capturing error logs and payloads.
-3. **Remediation:** AI analyzes the logs and source code, generating a patched version.
-4. **Evolution:** A new test container is spun up with the patch, verified against the attack, and promoted to live if secure. Vulnerable containers are terminated.
+```mermaid
+graph TD
+    Hacker[Attacker] -->|1 Malicious Request| Proxy[Proxy 8080]
 
-## Implementation Guide
+    Proxy -->|Traffic Analysis| Logic{Safe?}
+    Logic -->|YES| Live[Live App 8081]
+    Logic -->|NO| Shadow[Shadow Trap 8082]
 
-### Prerequisites
-- Docker and Docker Compose for container management.
-- Node.js (v18+), TypeScript, and npm for the orchestrator.
-- Go (v1.20+) for the reverse proxy.
-- API keys for AI services (Gemini or OpenAI).
+    Shadow -.->|2 Alert Payload| Brain[Orchestrator 3000]
 
-### Setup
-1. Clone the repository: `git clone https://github.com/your-repo/aegis.git`
-2. Install dependencies:
-   - For Node.js components: `npm install`
-   - For Go components: `go mod tidy`
-3. Configure environment variables (e.g., AI API keys) in `.env`.
-4. Build and run containers: `docker-compose up -d`
+    Brain <-->|3 Analyze and Write Code| AI[Cohere AI]
 
-### Building the Components
-- **Vulnerable App:** A sample Express API with intentional vulnerabilities (e.g., SQL injection in `/login`).
-- **Gatekeeper:** Implement a reverse proxy with request analysis logic.
-- **Orchestrator:** Use `dockerode` to manage containers and fetch logs.
-- **AI Integration:** Define prompts for code analysis and ensure structured output.
-- **Dashboard:** A web-based interface for real-time status monitoring.
+    Brain -->|4 Deploy Fix| Patch[Patched Server 8083]
+    Brain -->|5 Hot Swap Command| Proxy
 
-For detailed code examples, refer to the source files in `/src`.
+    Logic -.->|6 Rerouted Post Swap| Patch
 
-## Usage
+    style Hacker fill:#333,stroke:#f00,color:#fff
+    style Proxy fill:#00ADD8,stroke:#333,color:#fff
+    style Live fill:#28a745,stroke:#333,color:#fff
+    style Shadow fill:#dc3545,stroke:#333,color:#fff
+    style Brain fill:#6f42c1,stroke:#333,color:#fff
+    style Patch fill:#fd7e14,stroke:#333,color:#fff
+```
 
-1. Start the system: Run the Gatekeeper and Orchestrator services.
-2. Simulate an attack: Send malicious requests to the proxy endpoint.
-3. Monitor the dashboard: Observe detection, analysis, patching, and deployment.
-4. Verify security: Reattempt the attack to confirm the fix.
+##  Installation & Operation
+### Prerequisites:
 
-## Demo
+1. **Go** (Golang 1.20+)
+2. Cohere API Key (Free Trial)
 
-A 3-minute demo script is available in `demo-script.md`. It includes:
-- Setting up the vulnerable app.
-- Executing a simulated attack (e.g., SQL injection).
-- Observing real-time remediation on the dashboard.
-- Confirming the system's enhanced security post-patch.
+1. Clone & Configure
+```Bash
+git clone https://github.com/your-repo/aegis-defense-grid.git
+cd aegis-defense-grid
+```
+Open orchestrator_server/brain.go and paste your API Key:
 
-Video walkthroughs and screenshots are provided in the `/docs` directory.
+2. Ignite the Grid (Distributed Terminal Setup)
+You need 4 Terminals to simulate the microservices architecture.
 
-## Why Choose AEGIS?
+### Terminal 1: The Safe App
 
-AEGIS stands out in AI + Cybersecurity by delivering:
-- **Innovation:** Achieves self-healing code, a key advancement in DevOps and security automation.
-- **Technical Depth:** Integrates networking, AI, and infrastructure orchestration.
-- **Feasibility:** Focuses on automating specific patching workflows for practical enterprise use.
-- **Enterprise Readiness:** Designed for B2B/SaaS deployment, emphasizing scalability, compliance, and minimal downtime.
+```bash
+cd positive_server
+go run positive.go
+```
+### Terminal 2: The Shadow Trap
 
-## Contributing
+```md
+cd shadow_server
+go run negative.go
+```
+### Terminal 3: The Brain
 
-Contributions are welcome. Please fork the repository, create a feature branch, and submit a pull request. Ensure code adheres to linting standards and includes tests.
+```md
+cd orchestrator_server
+go run brain.go
+```
+### Terminal 4: The Proxy (Gatekeeper)
 
-## License
+```md
+# In root folder
+go run main.go analyzer.go
+```
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+2. Open your browser and navigate to the test link: http://localhost:8080/sqlinjection?q=admin'OR'1'='1
 
-## Contact
+3. Observe: You are redirected to the Red (Shadow) page. It shows a "Database Leaked" message. The hacker thinks they won.
 
-For inquiries, reach out to the development team at jhakritagya45@gmail.com.
+4. Logs: Watch the Brain Terminal. You will see:
+
+5. SECURITY INCIDENT RECEIVED  Analyzing & Generating Patch...
+
+## Phase 2: The Evolution
+
+1. Wait 2-3 seconds for the AI to code the fix.
+
+2. Logs: The Brain will report:
+
+3. Patched Server Started on Port 8083! Updating Proxy Routing Rules...
+
+4. Logs: The Proxy will report:
+
+5. [HOT SWAP] Traffic shifted!
+
+## Phase 3: The Immunity
+
+1. Refresh the browser (or click the link again).
+
+2. Observe: You are NO LONGER on the Red page. You are served a Safe/Sanitized response from the new AI-generated server.
+
+3. The system healed itself without human intervention.
+
+## Roadmap: Phase 2
+1. Docker Orchestration: Move from local processes to dynamic Container spawning. 
+2. Database Integration: Connect to a real Postgres instance to demonstrate actual connection pooling patches. 
+3. Vector Defense: Expand AI analysis to cover XSS and RCE attacks. [ ] Admin Dashboard: A React frontend to visualize the live traffic and server status.
+
+##  The Architect
+
+**Architecture:** Golang Distributed System
+
+**AI Integration:** Cohere Command Model
+
+**Defense Strategy:** Active Deception
