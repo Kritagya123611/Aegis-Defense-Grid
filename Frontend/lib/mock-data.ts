@@ -1,12 +1,7 @@
-/**
- * Mock data for AEGIS Defense Grid Dashboard
- * Simulates real-time threat detection and system status
- */
+// this is just a mock data file for frontend development
 
-// Server status types
 export type ServerStatus = "secure" | "threat" | "analyzing";
 
-// Server data structure
 export interface ServerData {
   id: string;
   name: string;
@@ -147,8 +142,8 @@ export const systemMetrics: SystemMetrics = {
 // Placeholder fetch function for future Golang backend integration
 export async function fetchServerStatus(): Promise<ServerData[]> {
   // TODO: Replace with actual API call to Golang backend
-  // const response = await fetch('http://localhost:8080/api/servers');
-  // return response.json();
+   const response = await fetch('http://localhost:8080/api/servers');
+   return response.json();
   
   return new Promise((resolve) => {
     setTimeout(() => resolve(serverData), 500);
@@ -157,8 +152,8 @@ export async function fetchServerStatus(): Promise<ServerData[]> {
 
 export async function fetchThreatLogs(): Promise<ThreatLog[]> {
   // TODO: Replace with actual API call to Golang backend
-  // const response = await fetch('http://localhost:8080/api/threats');
-  // return response.json();
+   const response = await fetch('http://localhost:8080/api/threats');
+   return response.json();
   
   return new Promise((resolve) => {
     setTimeout(() => resolve(threatLogs), 500);
@@ -167,8 +162,8 @@ export async function fetchThreatLogs(): Promise<ThreatLog[]> {
 
 export async function fetchSystemMetrics(): Promise<SystemMetrics> {
   // TODO: Replace with actual API call to Golang backend
-  // const response = await fetch('http://localhost:8080/api/metrics');
-  // return response.json();
+   const response = await fetch('http://localhost:8080/api/metrics');
+   return response.json();
   
   return new Promise((resolve) => {
     setTimeout(() => resolve(systemMetrics), 500);
