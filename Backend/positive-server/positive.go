@@ -8,7 +8,6 @@ import (
 //a simple web server which would host a simple message for the user which is legitimate
 func positive(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "text/html")
-	
 	fmt.Fprintln(w, "<h1> Welcome to Aegis Defense Grid!</h1>")
 	fmt.Fprintln(w, "<p>You are in the <b>POSITIVE (Safe)</b> Environment.</p>")
 	fmt.Fprintln(w, "<p>Status: <span style='color:green'>SECURE</span></p>")

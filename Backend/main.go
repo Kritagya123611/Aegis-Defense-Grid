@@ -9,6 +9,7 @@ import (
 	"net/url"
 	//"regexp"
 	"sync"
+	"bytes"
 )
 
 var (
@@ -55,6 +56,31 @@ func banHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func sendAlertToOrchestrator(payload string) {
+	alert := map[string]string{
+		"attackType": "SQL Injection",
+		"payload":    payload,
+		"originIP":   "unknown",
+	}
+
+	jsonData, _ := json.Marshal(alert)
+
+	resp, err := http.Post(
+		"http://localhost:3000/webhook/alerts",
+		"application/json",
+		bytes.NewBuffer(jsonData),
+	)
+
+	if err != nil {
+		fmt.Println("Failed to alert orchestrator:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("Alert sent to Orchestrator")
+}
+
+
 func apiAnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	if r.Method == "OPTIONS" {
@@ -88,6 +114,7 @@ func apiAnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 		
 		fmt.Printf(" [API CHECK] SAFE QUERY: %s\n", req.Query)
 	}
+	go sendAlertToOrchestrator(req.Query)
 
 	// D. Send JSON Response
 	w.Header().Set("Content-Type", "application/json")

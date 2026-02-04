@@ -1,3 +1,5 @@
+//negative.go
+
 package main
 
 import (

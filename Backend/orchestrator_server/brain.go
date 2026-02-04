@@ -1,3 +1,4 @@
+//brain.go
 package main
 
 import (
@@ -5,13 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	//"log"
 	"net/http"
 	"os"
+	"os/exec"
+	//"regexp"
+	"strings"
 	"github.com/joho/godotenv"
 )
 
-var COHERE_API_KEY string 
+// --- CONFIGURATION ---
+var COHERE_API_KEY string
 const COHERE_URL = "https://api.cohere.ai/v1/chat"
 
 type AlertPayload struct {
@@ -26,94 +31,180 @@ type CohereRequest struct {
 }
 
 type CohereResponse struct {
-	Text string `json:"text"` 
+    Text string `json:"text"` // The direct response text
 }
 
-func askCohere(alert AlertPayload) string {
-	prompt := fmt.Sprintf(
-		"You are a Cyber Security Expert. I have detected an attack.\n"+
-		"Type: %s\n"+
-		"Payload: %s\n"+
-		"Analyze this attack and explain broadly what it tries to do. Then, provide a Go code snippet to fix the vulnerability.",
-		alert.AttackType, alert.Payload,
-	)
+
+func cleanCode(code string) string {
+    // Find where the code actually starts
+    start := strings.Index(code, "package main")
+    if start == -1 { return code } // Fallback
+
+    // Find where the code ends
+    end := strings.LastIndex(code, "}")
+    if end == -1 { return code } // Fallback
+
+    return code[start : end+1]
+}
+
+// 1. Send Analysis back to Proxy Dashboard
+func sendAnalysisToProxy(analysisText string) {
+	payload := map[string]string{"analysis": analysisText}
+	jsonData, _ := json.Marshal(payload)
+	
+	// Send to the Proxy's new endpoint
+	resp, err := http.Post("http://localhost:8080/api/threats/update", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println(" Failed to update Dashboard:", err)
+	} else {
+		defer resp.Body.Close()
+		fmt.Println(" AI Analysis sent to Dashboard.")
+	}
+}
+
+func deployHotPatch(code string) {
+	fmt.Println("\n[AUTOPILOT] Deploying Hot Patch...")
+	cleanedCode := cleanCode(code)
+	if _, err := os.Stat("../patched_server"); os.IsNotExist(err) {
+		os.Mkdir("../patched_server", 0755)
+	}
+	err := os.WriteFile("../patched_server/secure.go", []byte(cleanedCode), 0644)
+	if err != nil {
+		fmt.Println(" Error writing patch file:", err)
+		return
+	}
+	
+	cmd := exec.Command("go", "run", "secure.go")
+	cmd.Dir = "../patched_server"
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	
+	err = cmd.Start()
+	if err != nil {
+		fmt.Println(" Error starting patched server:", err)
+		return
+	}
+	fmt.Println("   -->  Patched Server Started on Port 8083!")
+
+	http.Get("http://localhost:8080/admin/hotswap?port=8083")
+}
+
+func extractTextFromCohere(body []byte) string {
+    var resp CohereResponse
+    if err := json.Unmarshal(body, &resp); err != nil {
+        fmt.Println("JSON Unmarshal Error:", err)
+        return ""
+    }
+    return resp.Text
+}
+
+func isValidGoCode(code string) bool {
+    trimmed := strings.TrimSpace(code)
+    // A valid Go file MUST start with the package keyword
+    return strings.HasPrefix(trimmed, "package")
+}
+
+func extractSummary(text string) string {
+	for _, line := range strings.Split(text, "\n") {
+		if strings.HasPrefix(line, "SUMMARY:") {
+			return line
+		}
+	}
+	return "SUMMARY: SQL Injection attempt detected and mitigated."
+}
+
+
+func askCohere(alert AlertPayload) (summary string, goCode string) {
+	// In askCohere function
+prompt := fmt.Sprintf(
+    "Classify this input: '%s'. "+
+    "If it is a real attack, provide a 1-sentence analysis and a Go program to detect it. "+
+    "If it is HARMLESS, simply return the word 'CLEAR' and nothing else.",
+    alert.Payload,
+)
 
 	reqBody := CohereRequest{
-		Model:   "command-r-plus-08-2024", 
+		Model:   "command-r-08-2024",
 		Message: prompt,
 	}
+
 	jsonData, _ := json.Marshal(reqBody)
-	req, err := http.NewRequest("POST", COHERE_URL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "Error creating request: " + err.Error()
-	}
+
+	req, _ := http.NewRequest("POST", COHERE_URL, bytes.NewBuffer(jsonData))
 	req.Header.Set("Authorization", "Bearer "+COHERE_API_KEY)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "Error contacting Cohere: " + err.Error()
+		fmt.Println(" Cohere request failed:", err)
+		return "", ""
 	}
 	defer resp.Body.Close()
+
 	body, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode != 200 {
-		fmt.Println("\n[DEBUG] COHERE API ERROR:")
-		fmt.Printf("Status: %d\n", resp.StatusCode)
-		fmt.Printf("Body: %s\n", string(body))
-		return "Cohere Request Failed (See logs)"
+	fmt.Println("\n[COHERE RAW RESPONSE]")
+	fmt.Println(string(body))
+	fmt.Println("[END RAW RESPONSE]\n")
+
+	text := extractTextFromCohere(body)
+	summary = extractSummary(text)
+	goCode = cleanCode(text)
+
+	if !isValidGoCode(goCode) {
+		fmt.Println("[AUTOPILOT]  AI did not return valid Go code. Aborting deploy.")
+		return summary, ""
 	}
 
-	var cohereResp CohereResponse
-	if err := json.Unmarshal(body, &cohereResp); err != nil {
-		return "Error parsing JSON: " + err.Error()
-	}
-
-	return cohereResp.Text
+	return summary, goCode
 }
+
+
 
 func alertHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+    fmt.Println("\n[ORCHESTRATOR] Incoming request from", r.RemoteAddr)
+    fmt.Println("[ORCHESTRATOR] Method:", r.Method)
 
-	var alert AlertPayload
-	err := json.NewDecoder(r.Body).Decode(&alert)
-	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
+    var alert AlertPayload
+    if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
+        fmt.Println("Decode error:", err)
+        w.WriteHeader(http.StatusBadRequest)
+        return
+    }
 
-	fmt.Println("\n[ORCHESTRATOR] SECURITY INCIDENT RECEIVED")
-	fmt.Printf("PAYLOAD: %s\n", alert.Payload)
-	fmt.Println("ACTION: Contacting Cohere AI (Command R)...")
-	aiAnalysis := askCohere(alert)
+    fmt.Println("[ORCHESTRATOR] INCIDENT RECEIVED")
+    fmt.Println("  Type   :", alert.AttackType)
+    fmt.Println("  Payload:", alert.Payload)
+    fmt.Println("  Origin :", alert.OriginIP)
 
-	fmt.Println("\n [COHERE AI ANALYSIS]:")
-	fmt.Println("------------------------------------------------")
-	fmt.Println(aiAnalysis)
-	fmt.Println("------------------------------------------------")
+    fmt.Println("[ORCHESTRATOR] Analyzing...")
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"analyzed"}`))
+    summary, goCode := askCohere(alert)
+
+if strings.TrimSpace(summary) == "CLEAR" || strings.TrimSpace(goCode) == "CLEAR" {
+    fmt.Println("[ORCHESTRATOR] Input is harmless. Skipping deploy.")
+    sendAnalysisToProxy("Input analyzed: No threat detected.")
+    w.Write([]byte(`{"status":"clear"}`))
+    return // Exit early, don't try to deploy
 }
 
+	go sendAnalysisToProxy(summary)
+    if goCode != "" {
+        deployHotPatch(goCode)
+        w.Write([]byte(`{"status":"patched"}`))
+    } else {
+        w.Write([]byte(`{"status":"failed"}`))
+    }
+}
+
+
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Warning: .env file not found. Assuming env vars are set manually.")
-	}
-
-	//setting the key from env variable
+	godotenv.Load()
 	COHERE_API_KEY = os.Getenv("COHERE_API_KEY")
-	if COHERE_API_KEY == "" {
-		log.Fatal("FATAL: COHERE_API_KEY is missing in .env file!")
-	}
-
+	
 	http.HandleFunc("/webhook/alerts", alertHandler)
+	
 	port := ":3000"
-	fmt.Println("Aegis Orchestrator (Powered by Cohere) running on port", port)
+	fmt.Println("Aegis Orchestrator running on port", port)
 	http.ListenAndServe(port, nil)
 }
