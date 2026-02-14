@@ -24,9 +24,6 @@
     </a>
     <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
   </p>
-  <p style="font-size: 1.1rem; margin-top: 20px; color: #ff69b4;">
-✨ <strong>Special Thanks to Shreya Baranwal</strong> ✨
-</p>
 </div>
 </div>
 
