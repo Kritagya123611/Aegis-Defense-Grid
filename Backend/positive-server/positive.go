@@ -7,7 +7,6 @@ import (
 	"net/http"
 )
 
-//a simple web server which would host a simple message for the user which is legitimate
 func positive(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintln(w, "<h1> Welcome to Aegis Defense Grid!</h1>")

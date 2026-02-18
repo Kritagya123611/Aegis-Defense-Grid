@@ -15,7 +15,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// --- CONFIGURATION ---
 var COHERE_API_KEY string
 const COHERE_URL = "https://api.cohere.ai/v1/chat"
 
@@ -31,28 +30,22 @@ type CohereRequest struct {
 }
 
 type CohereResponse struct {
-    Text string `json:"text"` // The direct response text
+    Text string `json:"text"` 
 }
 
 
 func cleanCode(code string) string {
-    // Find where the code actually starts
     start := strings.Index(code, "package main")
-    if start == -1 { return code } // Fallback
-
-    // Find where the code ends
+    if start == -1 { return code } 
     end := strings.LastIndex(code, "}")
-    if end == -1 { return code } // Fallback
+    if end == -1 { return code } 
 
     return code[start : end+1]
 }
 
-// 1. Send Analysis back to Proxy Dashboard
 func sendAnalysisToProxy(analysisText string) {
 	payload := map[string]string{"analysis": analysisText}
 	jsonData, _ := json.Marshal(payload)
-	
-	// Send to the Proxy's new endpoint
 	resp, err := http.Post("http://localhost:8080/api/threats/update", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println(" Failed to update Dashboard:", err)
@@ -100,7 +93,6 @@ func extractTextFromCohere(body []byte) string {
 
 func isValidGoCode(code string) bool {
     trimmed := strings.TrimSpace(code)
-    // A valid Go file MUST start with the package keyword
     return strings.HasPrefix(trimmed, "package")
 }
 
@@ -115,7 +107,6 @@ func extractSummary(text string) string {
 
 
 func askCohere(alert AlertPayload) (summary string, goCode string) {
-	// In askCohere function
 prompt := fmt.Sprintf(
     "Classify this input: '%s'. "+
     "If it is a real attack, provide a 1-sentence analysis and a Go program to detect it. "+
@@ -185,7 +176,7 @@ if strings.TrimSpace(summary) == "CLEAR" || strings.TrimSpace(goCode) == "CLEAR"
     fmt.Println("[ORCHESTRATOR] Input is harmless. Skipping deploy.")
     sendAnalysisToProxy("Input analyzed: No threat detected.")
     w.Write([]byte(`{"status":"clear"}`))
-    return // Exit early, don't try to deploy
+    return 
 }
 
 	go sendAnalysisToProxy(summary)

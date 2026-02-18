@@ -121,7 +121,6 @@ func apiAnalyzeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-// 5. Existing Browser Redirect Handler (Keep this for the manual demo!)
 func sqlinjection(w http.ResponseWriter, r *http.Request) {
 	userIP := "192.168.1.X"
 	mutex.RLock()
@@ -147,7 +146,6 @@ func sqlinjection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Helper: Enable CORS
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -155,13 +153,9 @@ func enableCors(w *http.ResponseWriter) {
 }
 
 func main() {
-	// Original Browser Endpoint
 	http.HandleFunc("/sqlinjection", sqlinjection)
-	
-	// NEW React Endpoint
 	http.HandleFunc("/api/analyze", apiAnalyzeHandler)
 	
-	// Admin Endpoints
 	http.HandleFunc("/admin/ban", banHandler)
 	http.HandleFunc("/admin/hotswap", hotSwapHandler)
 
