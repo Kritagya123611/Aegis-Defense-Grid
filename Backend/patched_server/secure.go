@@ -1,25 +1,35 @@
 package main
 
 import (
-    "net/http"
-    "regexp"
+    "database/sql"
+    "fmt"
 )
 
 func main() {
-    http.HandleFunc("/", handleRequest)
-    http.ListenAndServe(":8080", nil)
-}
-
-func handleRequest(w http.ResponseWriter, r *http.Request) {
-    // Regular expression to detect SQL injection attempts
-    regex := regexp.MustCompile(`('|")?admin\s*OR\s*('|")?\s*=\s*('|")?\s*1\s*('|")?`)
-
-    // Check if the request contains the SQL injection pattern
-    if regex.MatchString(r.URL.RawQuery) {
-        http.Error(w, "SQL injection attempt detected", http.StatusForbidden)
+    // Simulate a database connection
+    db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/database")
+    if err != nil {
+        fmt.Println("Error connecting to database:", err)
         return
     }
+    defer db.Close()
 
-    // Process the request as usual
-    w.Write([]byte("Request processed successfully"))
+    // Simulate a user input
+    userInput := "admin' OR '1'='1"
+
+    // Prepare and execute the SQL query with the user input
+    query := "SELECT * FROM users WHERE username = ? AND password = ?"
+    rows, err := db.Query(query, userInput, userInput)
+    if err != nil {
+        fmt.Println("Error executing query:", err)
+        return
+    }
+    defer rows.Close()
+
+    // Check if any rows were returned
+    if rows.Next() {
+        fmt.Println("Attack detected: SQL injection attempt")
+    } else {
+        fmt.Println("No rows returned")
+    }
 }
